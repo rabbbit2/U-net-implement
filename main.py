@@ -11,9 +11,12 @@ from PIL import Image
 from scipy import ndimage
 import seaborn as sns
 import pandas as pd
-import .custom as *
+from custom import *
 
 #%%
+def toint64(tensor):
+    return torch.Tensor.to(tensor,dtype=torch.int64)
+
 c=segFolder("ttt\\Unet-master\\train",both_transform=Compose([
     [torchvision.transforms.Grayscale(),torchvision.transforms.Grayscale()],
     RandomCrop(188,padding=(92,92,92,92),padding_mode="symmetric",pad_if_needed=False),
@@ -24,8 +27,10 @@ c=segFolder("ttt\\Unet-master\\train",both_transform=Compose([
 ]))
 
 #%%
+
+
 #%%
-criterion = torch.nn.CrossEntropyLoss()
+criterion = torch.nn.CrossEntropyLoss(reduction="none")
 optimizer=torch.optim.SGD(Model.parameters(),momentum=0.9,lr=0.00005)
 accuracy=numpy.zeros((29))
 lossinfor=numpy.zeros((29))
