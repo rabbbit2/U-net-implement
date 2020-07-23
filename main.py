@@ -29,17 +29,14 @@ c=segFolder("ttt\\Unet-master\\train",both_transform=Compose([
 ]))
 
 #%%
-'''
-c=segFolder("ttt\\Unet-master\\train",both_transform=Compose([
+
+a=segFolder("C:\\Users\\Sharron\\Desktop\\pytorch\\Unet-master\\train",both_transform=Compose([
     [torchvision.transforms.Grayscale(),torchvision.transforms.Grayscale()],
-    RandomCrop(188,padding=(92,92,92,92),padding_mode="symmetric",pad_if_needed=False),
-    [lambda X: numpy.array(X),lambda X: numpy.array(X)],
-    lambda X:deform_random_grid(X,sigma=10,points=3),
-    [None,lambda X: (X>250)*1]
+    [torchvision.transforms.ToTensor(),torchvision.transforms.ToTensor()],
+    [torch.squeeze,torch.squeeze]
 ]))
 
-'''
-a=c.__getitem__(0)
+
 
 #def W(label,w0,sigma):
 
@@ -71,8 +68,11 @@ for i in range(500000):
     print(i,"loss=",loss.item())
 
 # %%
+Model.eval().cpu()
+with torch.no_grad():
+    b=evalmodel(a[0],Model,188,4)
 
 
-evalmodel
 
 # %%
+evalmodel

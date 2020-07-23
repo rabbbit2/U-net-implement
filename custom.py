@@ -165,7 +165,9 @@ def evalmodel(X,model,output_size,kernel_size):
     s=X.shape[0]
     Xh=torch.zeros((s,s))
     pad=(output_size-kernel_size)/2
-    X=F.pad(X,(pad,pad,pad,pad), padding_mode="symmetric")
+    X=torchvision.transforms.ToTensor(F.pad(torchvision.transforms.ToPILImage(X),(pad,pad,pad,pad), padding_mode="symmetric"))
     for i in range(0,s,kernel_size):
         for j in range(0,s,kernel_size):
             Xh[i:i+kernel_size,j:j+kernel_size]=model(X[i:i+output_size,j:j+output_size])
+    return Xh
+    
