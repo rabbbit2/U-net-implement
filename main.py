@@ -4,7 +4,7 @@ import torchvision
 import PIL
 from IPython.display import display
 import numpy
-import matplotlib.pyplot
+import matplotlib.pyplot as plt
 import os
 import os.path
 from PIL import Image
@@ -19,10 +19,11 @@ import model
 def toint64(tensor):
     return torch.Tensor.to(tensor,dtype=torch.int64)
 
-c=segFolder("ttt\\Unet-master\\train",both_transform=Compose([
+c=segFolder("C:\\Users\\Sharron\\Desktop\\pytorch\\ttt\\Unet-master\\train",both_transform=Compose([
     [torchvision.transforms.Grayscale(),torchvision.transforms.Grayscale()],
-    RandomCrop(188,padding=(92,92,92,92),padding_mode="symmetric",pad_if_needed=False),
-    [None,torchvision.transforms.CenterCrop(4)],
+    [torchvision.transforms.Resize(500),torchvision.transforms.Resize(500)],
+    RandomCrop(284,padding=(92,92,92,92),padding_mode="symmetric",pad_if_needed=False),
+    [None,torchvision.transforms.CenterCrop(100)],
     [torchvision.transforms.ToTensor(),torchvision.transforms.ToTensor()],
     [None,toint64],
     [None,torch.squeeze]
@@ -32,13 +33,20 @@ c=segFolder("ttt\\Unet-master\\train",both_transform=Compose([
 
 a=segFolder("C:\\Users\\Sharron\\Desktop\\pytorch\\Unet-master\\train",both_transform=Compose([
     [torchvision.transforms.Grayscale(),torchvision.transforms.Grayscale()],
-    [torchvision.transforms.ToTensor(),torchvision.transforms.ToTensor()],
-    [torch.squeeze,torch.squeeze]
+    [torchvision.transforms.Resize(500),torchvision.transforms.Resize(500)],
+    [torchvision.transforms.ToTensor(),None]
+
 ]))
 
 
 
-#def W(label,w0,sigma):
+def W(label,w0):
+    label=torch.Tensor.to(label,dtype=torch.float32)
+    #a=torch.sum(label)
+    #b=n-a
+    #labelc=n*(label*((1/a)-(1/b))+(1/b))/2
+    label=10*label+w0*numpy.exp(-(ndimage.distance_transform_edt(label)**2)/50)
+    return torch.Tensor.to(label,dtype=torch.float32)
 
 
 #%%
@@ -56,9 +64,9 @@ lossinfor=numpy.zeros((29))
 accuracyPerepoch0=[]
 lossPerepoch0=[]
 
-for i in range(500000):
+for i in range(1500):
     
-    for index ,j in enumerate(torch.utils.data.DataLoader(c,batch_size=29)):
+    for index ,j in enumerate(torch.utils.data.DataLoader(c,batch_size=14)):
         y_pred=Model(j[0].cuda())
         loss = torch.mean(criterion(y_pred, j[1].cuda()))
         optimizer.zero_grad()
@@ -70,9 +78,26 @@ for i in range(500000):
 # %%
 Model.eval().cpu()
 with torch.no_grad():
-    b=evalmodel(a[0],Model,188,4)
+    b=evalmodel(a[0][0],Model,284,100)
 
+torchvision.transforms.ToPILImage()(1-b).save("C:\\Users\\Sharron\\Desktop\\pytorch\\present\\nwlossresult.png")
+a[0][1].save("C:\\Users\\Sharron\\Desktop\\pytorch\\present\\true.png")
 
-
+#%%
+defor=segFolder("C:\\Users\\Sharron\\Desktop\\pytorch\\Unet-master\\train",both_transform=Compose([
+    [torchvision.transforms.Grayscale(),torchvision.transforms.Grayscale()],
+    [torchvision.transforms.Resize(500),torchvision.transforms.Resize(500)],
+    [numpy.array,numpy.array],
+    lambda X: deform_random_grid(X,10,5),
+    [torchvision.transforms.ToPILImage(),torchvision.transforms.ToPILImage()]
+]))
+dd=defor.__getitem__(0)
+#%%
+dd[1].save("C:\\Users\\Sharron\\Desktop\\pytorch\\present\\defolab.png")
+dd[0].save("C:\\Users\\Sharron\\Desktop\\pytorch\\present\\defo.png")
 # %%
+torch.cuda.empty_cache()
+Model.train().cuda()
+#%%
 evalmodel
+W(j[1],0.5).cuda()*

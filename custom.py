@@ -162,12 +162,22 @@ class RandomCrop(torchvision.transforms.RandomCrop):
 
 #%%
 def evalmodel(X,model,output_size,kernel_size):
-    s=X.shape[0]
-    Xh=torch.zeros((s,s))
-    pad=(output_size-kernel_size)/2
-    X=torchvision.transforms.ToTensor(F.pad(torchvision.transforms.ToPILImage(X),(pad,pad,pad,pad), padding_mode="symmetric"))
+    s=X.shape[1]
+    Xh=torch.zeros((1,s,s))
+    pad=int((output_size-kernel_size)/2)
+    Y=torchvision.transforms.ToPILImage()(X)
+    X=torchvision.transforms.ToTensor()(F.pad(Y,(pad,pad,pad,pad), padding_mode="symmetric"))
+    X=torch.unsqueeze(X,0)
     for i in range(0,s,kernel_size):
         for j in range(0,s,kernel_size):
-            Xh[i:i+kernel_size,j:j+kernel_size]=model(X[i:i+output_size,j:j+output_size])
+            p=torch.nn.Softmax(1)(model(X[:,:,i:i+output_size,j:j+output_size]))
+            p=p[0,0,:]
+            Xh[:,i:i+kernel_size,j:j+kernel_size]=(p>0.5)*1
     return Xh
     
+
+
+
+
+
+# %%
