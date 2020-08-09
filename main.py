@@ -22,11 +22,15 @@ def toint64(tensor):
 c=segFolder("C:\\Users\\Sharron\\Desktop\\pytorch\\ttt\\Unet-master\\train",both_transform=Compose([
     [torchvision.transforms.Grayscale(),torchvision.transforms.Grayscale()],
     [torchvision.transforms.Resize(500),torchvision.transforms.Resize(500)],
+    [numpy.array,numpy.array],
+    lambda X: deform_random_grid(X,10,5,),
+    [torchvision.transforms.ToPILImage(),torchvision.transforms.ToPILImage()],
     RandomCrop(284,padding=(92,92,92,92),padding_mode="symmetric",pad_if_needed=False),
     [None,torchvision.transforms.CenterCrop(100)],
     [torchvision.transforms.ToTensor(),torchvision.transforms.ToTensor()],
-    [None,toint64],
-    [None,torch.squeeze]
+    #[None,toint64],
+    [None,torch.squeeze],
+    [None,lambda x: torch.stack([1-x,x])]
 ]))
 
 #%%
@@ -48,7 +52,7 @@ def W(label,w0):
     label=10*label+w0*numpy.exp(-(ndimage.distance_transform_edt(label)**2)/50)
     return torch.Tensor.to(label,dtype=torch.float32)
 
-
+Model=torch.load('C:\\Users\\Sharron\\Desktop\\pytorch\\present\\Model.pth')
 #%%
 def weight_init(m):
     if isinstance(m,model.Umodel)==False:
@@ -56,19 +60,20 @@ def weight_init(m):
         torch.nn.init.normal_(m.weight,std=std)
 Model=model.Umodel().cuda()
 model.Umodel.apply(Model,weight_init)
+
 #%%
 criterion = torch.nn.CrossEntropyLoss(reduction="none")
-optimizer=torch.optim.SGD(Model.parameters(),momentum=0.99,lr=0.005)
-accuracy=numpy.zeros((29))
-lossinfor=numpy.zeros((29))
-accuracyPerepoch0=[]
-lossPerepoch0=[]
 
-for i in range(1500):
+#%%
+optimizer=torch.optim.SGD(Model.parameters(),momentum=0.99,lr=0.000005)
+
+
+for i in range(1000):
     
-    for index ,j in enumerate(torch.utils.data.DataLoader(c,batch_size=14)):
-        y_pred=Model(j[0].cuda())
-        loss = torch.mean(criterion(y_pred, j[1].cuda()))
+    for index ,j in enumerate(torch.utils.data.DataLoader(c,batch_size=10)):
+        y_pred=torch.nn.Softmax(1)(Model(j[0].cuda()))
+        loss = -torch.mean(torch.log(y_pred)*j[1].cuda())
+        #loss = torch.mean(criterion(y_pred, j[1].cuda()))
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -78,8 +83,13 @@ for i in range(1500):
 # %%
 Model.eval().cpu()
 with torch.no_grad():
-    b=evalmodel(a[0][0],Model,284,100)
+    b=evalmodel(a[0][0],Model,284,100,0.4)
 
+#%%
+torch.save(Model, 'C:\\Users\\Sharron\\Desktop\\pytorch\\present\\Model.pth')
+torch.load('C:\\Users\\Sharron\\Desktop\\pytorch\\present\\Model.pth')
+
+#%%
 torchvision.transforms.ToPILImage()(1-b).save("C:\\Users\\Sharron\\Desktop\\pytorch\\present\\nwlossresult.png")
 a[0][1].save("C:\\Users\\Sharron\\Desktop\\pytorch\\present\\true.png")
 
@@ -88,7 +98,7 @@ defor=segFolder("C:\\Users\\Sharron\\Desktop\\pytorch\\Unet-master\\train",both_
     [torchvision.transforms.Grayscale(),torchvision.transforms.Grayscale()],
     [torchvision.transforms.Resize(500),torchvision.transforms.Resize(500)],
     [numpy.array,numpy.array],
-    lambda X: deform_random_grid(X,10,5),
+    lambda X: deform_random_grid(X,10,5,),
     [torchvision.transforms.ToPILImage(),torchvision.transforms.ToPILImage()]
 ]))
 dd=defor.__getitem__(0)
@@ -100,4 +110,5 @@ torch.cuda.empty_cache()
 Model.train().cuda()
 #%%
 evalmodel
-W(j[1],0.5).cuda()*
+W(j[1],0.5).cuda()
+

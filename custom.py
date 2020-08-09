@@ -161,7 +161,7 @@ class RandomCrop(torchvision.transforms.RandomCrop):
 
 
 #%%
-def evalmodel(X,model,output_size,kernel_size):
+def evalmodel(X,model,output_size,kernel_size,threshold):
     s=X.shape[1]
     Xh=torch.zeros((1,s,s))
     pad=int((output_size-kernel_size)/2)
@@ -172,7 +172,7 @@ def evalmodel(X,model,output_size,kernel_size):
         for j in range(0,s,kernel_size):
             p=torch.nn.Softmax(1)(model(X[:,:,i:i+output_size,j:j+output_size]))
             p=p[0,0,:]
-            Xh[:,i:i+kernel_size,j:j+kernel_size]=(p>0.5)*1
+            Xh[:,i:i+kernel_size,j:j+kernel_size]=(p>threshold)*1
     return Xh
     
 
@@ -181,3 +181,16 @@ def evalmodel(X,model,output_size,kernel_size):
 
 
 # %%
+def randerror(L,P,n):
+    
+    for i in torch.randint(L.shape[-1],(n,2,2)):
+        
+        
+#%%
+
+torch.rand((512,512))[torch.randint(512,(3,2))].shape
+
+
+
+# %%
+
